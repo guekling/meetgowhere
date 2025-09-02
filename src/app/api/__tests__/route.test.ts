@@ -20,6 +20,7 @@ import { POST as POST_JOIN } from '../sessions/[id]/join/route';
 import { GET as GET_VALIDATE } from '../sessions/[id]/validate/route';
 import { POST as POST_COMPUTE } from '../sessions/[id]/compute/route'
 import { GET as GET_SESSION } from '../sessions/[id]/route';
+import { GET as GET_AUTH } from '../auth/route';
 
 beforeAll(() => {
   execSync('npx sequelize-cli db:migrate --env test');
@@ -372,5 +373,39 @@ describe('GET /api/sessions/:id', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data).toHaveProperty('session');
+  });
+});
+
+describe('GET /api/auth', () => {
+  let initiatorUserToken: string;
+
+  beforeAll(async () => {
+    // create new session
+    const req = new NextRequest('http://localhost/api/sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'initiator', location: generateRandomCoordinates() }),
+    });
+    const res = await POST_SESSION(req);
+    const data = await res.json();
+
+    const cookie = res.headers.get('Set-Cookie');
+    initiatorUserToken = cookie?.match(/userToken=([^;]*)/)[1];
+  });
+
+  it('should authenticate user and return token', async () => {
+    const req = new NextRequest('http://localhost/api/auth', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': `userToken=${initiatorUserToken}`
+      },
+    });
+    const res = await GET_AUTH(req);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toHaveProperty('user');
   });
 });
