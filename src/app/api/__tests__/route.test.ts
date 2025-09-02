@@ -16,6 +16,7 @@ jest.mock('next/headers', () => ({
 
 import { POST as POST_SESSION } from '../sessions/route';
 import { POST as POST_JOIN } from '../sessions/[id]/join/route';
+import { GET } from '../sessions/[id]/validate/route';
 
 beforeAll(() => {
   execSync('npx sequelize-cli db:migrate --env test');
@@ -155,5 +156,64 @@ describe('POST /api/sessions/:id/join', () => {
     const cookie = res.headers.get('Set-Cookie');
     const match = cookie?.match(/userToken=([^;]*)/);
     expect(match[1]).toBe(existingUserToken);
+  });
+});
+
+describe('POST /api/sessions/:id/validate', () => {
+  let sessionId;
+  let inviteToken;
+
+  beforeAll(async () => {
+    // create new session
+    const req = new NextRequest('http://localhost/api/sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'testuser' }),
+    });
+    const res = await POST_SESSION(req);
+    const data = await res.json();
+    sessionId = data.sessionId;
+    inviteToken = data.inviteToken;
+  });
+
+  it('should return 200 if token is valid', async () => {
+    const req = new NextRequest(`http://localhost/api/session/${sessionId}?token=${inviteToken}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    const res = await GET(req, { params: Promise.resolve({ id: sessionId }) });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toHaveProperty('message', 'ok');
+  });
+
+  it('should return 400 if token is missing', async () => {
+    const req = new NextRequest(`http://localhost/api/session/${sessionId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    const res = await GET(req, { params: Promise.resolve({ id: sessionId }) });
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data).toHaveProperty('error', 'Missing invite token');
+  });
+
+  it('should return 400 if token is invalid', async () => {
+    const req = new NextRequest(`http://localhost/api/session/${sessionId}?token=invalid`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    const res = await GET(req, { params: Promise.resolve({ id: sessionId }) });
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data).toHaveProperty('error', 'Invalid invite token');
   });
 });
