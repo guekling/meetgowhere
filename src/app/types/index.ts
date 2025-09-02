@@ -8,6 +8,23 @@ export enum SessionStatus {
   ENDED = 'ended',
 }
 
+export enum LocationSource {
+  AUTOMATIC = 'automatic',
+  MANUAL = 'manual',
+}
+
+export interface LocationInfo {
+  lat: number;
+  lng: number;
+  source: LocationSource;
+  updated_at: string;
+}
+
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
 export enum ErrorType {
   INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
   MISSING_INVITE_TOKEN = 'MISSING_INVITE_TOKEN',

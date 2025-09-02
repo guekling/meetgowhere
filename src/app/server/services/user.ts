@@ -22,6 +22,14 @@ export async function createUser(
 
     return { userId, token };
   } catch (error) {
+    console.error("Failed to create user:", error);
     throw new Error('Failed to create user');
   }
+}
+
+export async function isUserAnInitiator(userId: string): Promise<boolean> {
+  const user = await db.User.findByPk(userId);
+  if (!user) return false;
+
+  return user.getDataValue('role') === 'initiator';
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getUserFromRequest } from '@/app/server/utils/auth';
-import { ErrorDetails, ErrorType, SessionStatus, UserRoles } from '@/app/types';
+import { ErrorDetails, ErrorType, UserRoles } from '@/app/types';
 import { createUser } from '@/app/server/services/user';
 import { isSessionInvalid } from '@/app/server/services/session';
 
@@ -16,7 +16,9 @@ import { isSessionInvalid } from '@/app/server/services/session';
  *  - username: string
  *  - location: { lat: number, lng: number }
  * response:
- *  - message: string
+ *  - 200: { message: 'ok' }
+ *  - 401: { error: 'Missing invite token' }
+ *  - 403: { error: 'Invalid invite token' }
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const searchParams = request.nextUrl.searchParams;

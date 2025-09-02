@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: message }, { status });
   }
 
-  if (!await isSessionInvalid(sessionId, token)) {
+  if (await isSessionInvalid(sessionId, token)) {
     console.error('Invalid invite token');
     const { message, status } = ErrorDetails[ErrorType.INVALID_INVITE_TOKEN];
     return NextResponse.json({ error: message }, { status });

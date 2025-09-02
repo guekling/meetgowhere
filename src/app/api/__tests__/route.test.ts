@@ -2,9 +2,10 @@
 import { execSync } from 'child_process';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 
 import db from '@/app/server/db/models';
-import { UserRoles } from '@/app/types';
+import { ErrorDetails, ErrorType, LatLng, UserRoles } from '@/app/types';
 import * as userService from '@/app/server/services/user';
 
 // mock Next.JS cookies API
@@ -17,6 +18,7 @@ jest.mock('next/headers', () => ({
 import { POST as POST_SESSION } from '../sessions/route';
 import { POST as POST_JOIN } from '../sessions/[id]/join/route';
 import { GET } from '../sessions/[id]/validate/route';
+import { POST as POST_COMPUTE } from '../sessions/[id]/compute/route'
 
 beforeAll(() => {
   execSync('npx sequelize-cli db:migrate --env test');
@@ -26,6 +28,16 @@ afterAll(async () => {
   await db.sequelize.close();
   execSync('npx sequelize-cli db:migrate:undo:all --env test');
 });
+
+function generateRandomCoordinates(): LatLng {
+  // Latitude ranges from -90 to +90
+  const latitude = Math.random() * 180 - 90;
+
+  // Longitude ranges from -180 to +180
+  const longitude = Math.random() * 360 - 180;
+
+  return { lat: latitude, lng: longitude };
+}
 
 describe('POST /api/sessions', () => {
   it('should create a session and return sessionId and inviteToken', async () => {
@@ -95,10 +107,6 @@ describe('POST /api/sessions/:id/join', () => {
     const data = await res.json();
     sessionId = data.sessionId;
     inviteToken = data.inviteToken;
-  });
-
-  afterEach(async () => {
-    jest.resetAllMocks();
   });
 
   it('should join a session and set userToken cookie', async () => {
@@ -215,5 +223,113 @@ describe('POST /api/sessions/:id/validate', () => {
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data).toHaveProperty('error', 'Invalid invite token');
+  });
+});
+
+describe('POST /api/sessions/:id/compute', () => {
+  let sessionId;
+  let inviteToken;
+  let initiatorUserToken;
+
+  beforeAll(async () => {
+    // create new session
+    const req = new NextRequest('http://localhost/api/sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'initiator', location: generateRandomCoordinates() }),
+    });
+    const res = await POST_SESSION(req);
+    const data = await res.json();
+    sessionId = data.sessionId;
+    inviteToken = data.inviteToken;
+
+    const cookie = res.headers.get('Set-Cookie');
+    initiatorUserToken = cookie?.match(/userToken=([^;]*)/)[1];
+
+    // join sessions
+    const usernames = ['userA', 'userB'];
+    for (const username of usernames) {
+      // reset Next.JS cookies API mock
+      (cookies as jest.Mock).mockImplementation(() => ({
+        get: jest.fn(),
+      }));
+
+      const joinReq = new NextRequest(`http://localhost/api/sessions/${sessionId}/join?token=${inviteToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, location: generateRandomCoordinates() }),
+      });
+      const joinRes = await POST_JOIN(joinReq, { params: Promise.resolve({ id: sessionId }) });
+      expect(joinRes.status).toBe(200);
+      const joinData = await joinRes.json();
+      expect(joinData).toHaveProperty('message', 'ok');
+    }
+  });
+
+  it('should return 403 if user is not authenticated', async () => {
+    const req = new NextRequest(`http://localhost/api/sessions/${sessionId}/compute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
+    const res = await POST_COMPUTE(req, { params: { id: sessionId } });
+    expect(res.status).toBe(ErrorDetails[ErrorType.UNAUTHORIZED].status);
+    const data = await res.json();
+    expect(data).toHaveProperty('error', ErrorDetails[ErrorType.UNAUTHORIZED].message);
+  });
+
+  it('should return 200 and computed location if successful', async () => {
+    (cookies as jest.Mock).mockImplementation(() => ({
+      get: jest.fn(() => ({ value: initiatorUserToken })),
+    }));
+
+    const req = new NextRequest(`http://localhost/api/sessions/${sessionId}/compute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': `userToken=${initiatorUserToken}`
+      },
+      body: JSON.stringify({}),
+    });
+    const res = await POST_COMPUTE(req, { params: { id: sessionId } });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toHaveProperty('computedLocation');
+  });
+
+  it('should return 400 if session not found', async () => {
+    const invalidSessionId = uuidv4();
+    const req = new NextRequest(`http://localhost/api/sessions/${invalidSessionId}/compute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
+    const res = await POST_COMPUTE(req, { params: { id: invalidSessionId } });
+    expect(res.status).toBe(ErrorDetails[ErrorType.INVALID_INVITE_TOKEN].status);
+    const data = await res.json();
+    expect(data).toHaveProperty('error', ErrorDetails[ErrorType.INVALID_INVITE_TOKEN].message);
+  });
+
+  it('should return 400 if location has already been computed', async () => {
+    const req = new NextRequest(`http://localhost/api/sessions/${sessionId}/compute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': `userToken=${initiatorUserToken}`
+      },
+      body: JSON.stringify({}),
+    });
+    const res = await POST_COMPUTE(req, { params: { id: sessionId } });
+    expect(res.status).toBe(ErrorDetails[ErrorType.BAD_REQUEST].status);
+    const data = await res.json();
+    expect(data).toHaveProperty('error', ErrorDetails[ErrorType.BAD_REQUEST].message);
   });
 });

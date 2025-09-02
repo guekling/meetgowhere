@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
 import { createUser } from '@/app/server/services/user';
-import { ErrorDetails, ErrorType, SessionStatus, UserRoles } from '@/app/types/index';
+import { ErrorDetails, ErrorType, UserRoles } from '@/app/types/index';
 import { createSession } from '@/app/server/services/session';
 
 /**
