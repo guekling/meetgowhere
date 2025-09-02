@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
+import { getUserById } from '../services/user';
+
 const secretKey = process.env.JWT_SECRET;
 
 export function createUserToken(userId: string): string {
@@ -38,4 +40,15 @@ export async function getUserFromRequest(
   } catch (err) {
     return null;
   }
+}
+
+export async function isUserAuthenticated(
+  req: NextRequest,
+  reqSessionId: string
+): Promise<boolean> {
+  const user = await getUserFromRequest(req);
+  const userInfo = await getUserById(user?.userId);
+  const userSessionId = userInfo?.getDataValue('session_id');
+
+  return user !== null && userSessionId === reqSessionId;
 }

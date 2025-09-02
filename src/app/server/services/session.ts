@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import db from '../db/models';
-import { LatLng, LocationInfo, LocationSource, SessionStatus } from '@/app/types';
+import { LatLng, LocationInfo, LocationSource, ParticipantInfo, SessionInfo, SessionStatus } from '@/app/types';
 import { Session } from '../db/models/session';
 import { computeCentroid } from '../utils/geo';
 
@@ -85,4 +85,39 @@ export async function computeLocation(sessionId: string, locations: LatLng[]): P
   );
 
   return computedLocation;
+}
+
+export async function getSessionInformation(sessionId: string): Promise<SessionInfo | null> {
+  const session = await getSessionById(sessionId);
+  if (!session) return null;
+
+  const usersInSession = await db.User.findAll({
+    where: { session_id: sessionId },
+  });
+  const usersInfo = usersInSession.map<ParticipantInfo>((user) => {
+    const location = user.getDataValue('location');
+    return {
+      username: user.getDataValue('username'),
+      role: user.getDataValue('role'),
+      location: location
+        ? {
+          lat: location.lat,
+          lng: location.lng,
+        }
+        : null,
+    };
+  });
+
+  return {
+    id: session.getDataValue('id'),
+    status: session.getDataValue('status'),
+    createdBy: session.getDataValue('created_by'),
+    createdAt: session.getDataValue('created_at'),
+    updatedAt: session.getDataValue('updated_at'),
+    endedAt: session.getDataValue('ended_at'),
+    inviteToken: session.getDataValue('invite_token'),
+    computedLocation: session.getDataValue('computed_location'),
+    overrideLocation: session.getDataValue('override_location'),
+    participants: usersInfo,
+  };
 }

@@ -17,8 +17,9 @@ jest.mock('next/headers', () => ({
 
 import { POST as POST_SESSION } from '../sessions/route';
 import { POST as POST_JOIN } from '../sessions/[id]/join/route';
-import { GET } from '../sessions/[id]/validate/route';
+import { GET as GET_VALIDATE } from '../sessions/[id]/validate/route';
 import { POST as POST_COMPUTE } from '../sessions/[id]/compute/route'
+import { GET as GET_SESSION } from '../sessions/[id]/route';
 
 beforeAll(() => {
   execSync('npx sequelize-cli db:migrate --env test');
@@ -90,9 +91,9 @@ describe('POST /api/sessions', () => {
 });
 
 describe('POST /api/sessions/:id/join', () => {
-  let sessionId;
-  let inviteToken;
-  let existingUserToken;
+  let sessionId: string;
+  let inviteToken: string;
+  let existingUserToken: string;
 
   beforeAll(async () => {
     // create new session
@@ -168,8 +169,8 @@ describe('POST /api/sessions/:id/join', () => {
 });
 
 describe('POST /api/sessions/:id/validate', () => {
-  let sessionId;
-  let inviteToken;
+  let sessionId: string;
+  let inviteToken: string;
 
   beforeAll(async () => {
     // create new session
@@ -193,7 +194,7 @@ describe('POST /api/sessions/:id/validate', () => {
         'Content-Type': 'application/json',
       },
     });
-    const res = await GET(req, { params: Promise.resolve({ id: sessionId }) });
+    const res = await GET_VALIDATE(req, { params: Promise.resolve({ id: sessionId }) });
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data).toHaveProperty('message', 'ok');
@@ -206,7 +207,7 @@ describe('POST /api/sessions/:id/validate', () => {
         'Content-Type': 'application/json',
       },
     });
-    const res = await GET(req, { params: Promise.resolve({ id: sessionId }) });
+    const res = await GET_VALIDATE(req, { params: Promise.resolve({ id: sessionId }) });
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data).toHaveProperty('error', 'Missing invite token');
@@ -219,7 +220,7 @@ describe('POST /api/sessions/:id/validate', () => {
         'Content-Type': 'application/json',
       },
     });
-    const res = await GET(req, { params: Promise.resolve({ id: sessionId }) });
+    const res = await GET_VALIDATE(req, { params: Promise.resolve({ id: sessionId }) });
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data).toHaveProperty('error', 'Invalid invite token');
@@ -227,9 +228,9 @@ describe('POST /api/sessions/:id/validate', () => {
 });
 
 describe('POST /api/sessions/:id/compute', () => {
-  let sessionId;
-  let inviteToken;
-  let initiatorUserToken;
+  let sessionId: string;
+  let inviteToken: string;
+  let initiatorUserToken: string;
 
   beforeAll(async () => {
     // create new session
@@ -331,5 +332,45 @@ describe('POST /api/sessions/:id/compute', () => {
     expect(res.status).toBe(ErrorDetails[ErrorType.BAD_REQUEST].status);
     const data = await res.json();
     expect(data).toHaveProperty('error', ErrorDetails[ErrorType.BAD_REQUEST].message);
+  });
+});
+
+describe('GET /api/sessions/:id', () => {
+  let sessionId: string;
+  let initiatorUserToken: string;
+
+  beforeAll(async () => {
+    // create new session
+    const req = new NextRequest('http://localhost/api/sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'testuser' }),
+    });
+    const res = await POST_SESSION(req);
+    const data = await res.json();
+    sessionId = data.sessionId;
+
+    const cookie = res.headers.get('Set-Cookie');
+    initiatorUserToken = cookie?.match(/userToken=([^;]*)/)[1];
+  });
+
+  it('should retrieve session info', async () => {
+    (cookies as jest.Mock).mockImplementation(() => ({
+      get: jest.fn(() => ({ value: initiatorUserToken })),
+    }));
+
+    const req = new NextRequest(`http://localhost/api/sessions/${sessionId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': `userToken=${initiatorUserToken}`
+      },
+    });
+    const res = await GET_SESSION(req, { params: Promise.resolve({ id: sessionId }) });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toHaveProperty('session');
   });
 });

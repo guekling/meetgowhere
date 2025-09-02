@@ -1,6 +1,7 @@
 import db from '../db/models';
 import { UserRoles, LocationInfo } from '../../types';
 import { createUserToken } from '../utils/auth';
+import { User } from '../db/models/user';
 
 export async function createUser(
   username: string,
@@ -28,8 +29,17 @@ export async function createUser(
 }
 
 export async function isUserAnInitiator(userId: string): Promise<boolean> {
-  const user = await db.User.findByPk(userId);
+  const user = await getUserById(userId);
   if (!user) return false;
 
   return user.getDataValue('role') === 'initiator';
+}
+
+export async function getUserById(userId: string): Promise<User> {
+  try {
+    const user = await db.User.findByPk(userId);
+    return user;
+  } catch (error) {
+    throw new Error('Failed to retrieve user');
+  }
 }

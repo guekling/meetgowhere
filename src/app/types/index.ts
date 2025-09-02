@@ -25,6 +25,25 @@ export interface LatLng {
   lng: number;
 }
 
+export interface ParticipantInfo {
+  username: string;
+  role: UserRoles;
+  location: LatLng;
+}
+
+export interface SessionInfo {
+  id: string;
+  status: SessionStatus;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+  endedAt: Date | null;
+  inviteToken: string;
+  computedLocation: LocationInfo | null;
+  overrideLocation: LocationInfo | null;
+  participants: ParticipantInfo[];
+}
+
 export enum ErrorType {
   INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
   MISSING_INVITE_TOKEN = 'MISSING_INVITE_TOKEN',

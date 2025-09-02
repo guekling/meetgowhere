@@ -1,9 +1,9 @@
-import { LocationInfo } from '@/app/types';
+import { LocationInfo, SessionStatus } from '@/app/types';
 import { Model, DataTypes, Sequelize, Optional } from 'sequelize';
 
 export interface SessionAttributes {
   id: string;
-  status: 'active' | 'ended';
+  status: SessionStatus;
   created_at: Date;
   computed_location?: LocationInfo | null;
   override_location?: LocationInfo | null;
@@ -17,7 +17,7 @@ export interface SessionCreationAttributes
   extends Optional<
     SessionAttributes,
     'id' | 'ended_at' | 'computed_location' | 'override_location' | 'updated_at'
-  > {}
+  > { }
 
 export class Session extends Model<SessionAttributes, SessionCreationAttributes> {
   static associate(models: any) {
