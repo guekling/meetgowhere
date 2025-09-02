@@ -20,27 +20,6 @@ export default function JoinSession() {
   const [isSessionValid, setIsSessionValid] = useState(false);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
 
-  const validateSession = async () => {
-    if (!sessionId || !token) {
-      setIsSessionValid(false);
-    }
-
-    try {
-      const res = await fetch(`/api/sessions/${sessionId}/validate?token=${token}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (res.ok) {
-        setIsSessionValid(true);
-      }
-    } catch (error) {
-      setIsSessionValid(false);
-    }
-  };
-
   const handleJoinSession = async () => {
     if (!username.trim()) {
       setError('Please enter your username');
@@ -72,26 +51,47 @@ export default function JoinSession() {
     }
   };
 
-  const checkUserAuth = async () => {
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (res.ok) {
-        setIsUserAuthenticated(true);
-      }
-    } catch (err) {
-      setIsUserAuthenticated(false);
-    }
-  };
-
   useEffect(() => {
+    const checkUserAuth = async () => {
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (res.ok) {
+          setIsUserAuthenticated(true);
+        }
+      } catch (err) {
+        setIsUserAuthenticated(false);
+      }
+    };
+
+    const validateSession = async () => {
+      if (!sessionId || !token) {
+        setIsSessionValid(false);
+      }
+
+      try {
+        const res = await fetch(`/api/sessions/${sessionId}/validate?token=${token}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (res.ok) {
+          setIsSessionValid(true);
+        }
+      } catch (error) {
+        setIsSessionValid(false);
+      }
+    };
+
     checkUserAuth();
     // ensures the sessionId matches the inviteToken
     validateSession();
-  }, []);
+  }, [sessionId, token]);
 
   // if user is already authenticated, redirect to session info page
   useEffect(() => {

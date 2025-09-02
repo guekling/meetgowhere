@@ -16,9 +16,7 @@ export function createUserToken(userId: string): string {
   return token;
 }
 
-export async function getUserFromRequest(
-  req: NextRequest
-): Promise<{ userId: string; token: string } | null> {
+export async function getUserFromRequest(): Promise<{ userId: string; token: string } | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('userToken');
 
@@ -46,7 +44,7 @@ export async function isUserAuthenticated(
   req: NextRequest,
   reqSessionId: string
 ): Promise<boolean> {
-  const user = await getUserFromRequest(req);
+  const user = await getUserFromRequest();
   const userInfo = await getUserById(user?.userId);
   const userSessionId = userInfo?.getDataValue('session_id');
 

@@ -11,10 +11,10 @@ export interface UserAttributes {
   updated_at?: Date | null;
 }
 
-export interface UserCreationAttributes
-  extends Optional<UserAttributes, 'id' | 'location' | 'updated_at'> {}
+export type UserCreationAttributes = Optional<UserAttributes, 'id' | 'location' | 'updated_at'>;
 
 export class User extends Model<UserAttributes, UserCreationAttributes> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static associate(models: any) {
     // A user belongs to a session
     User.belongsTo(models.Session, { foreignKey: 'session_id', as: 'session' });

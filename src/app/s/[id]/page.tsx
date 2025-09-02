@@ -25,50 +25,6 @@ export default function Session() {
 
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const getSessionInfo = async () => {
-    try {
-      const res = await fetch(`/api/sessions/${sessionId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-
-        setParticipants(data.session.participants);
-        setComputedLocation(data.session.computedLocation);
-        setOverrideLocation(data.session.overrideLocation);
-        setSessionStatus(data.session.status);
-        setInviteUrl(
-          `${window.location.origin}/s/${data.session.id}/join?token=${data.session.inviteToken}`
-        );
-      } else {
-        setPageError('Failed to load session info');
-      }
-    } catch (err) {
-      setPageError('Failed to load session info');
-    }
-  };
-
-  const checkUserAuth = async () => {
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await res.json();
-
-      if (res.ok && data.user.sessionId === sessionId) {
-        setIsUserAuthenticated(true);
-        setUserRole(data.user.role);
-      }
-    } catch (err) {
-      setIsUserAuthenticated(false);
-    }
-  };
-
   const onComputeLocation = async () => {
     setComputeLocLoading(true);
     try {
@@ -103,14 +59,58 @@ export default function Session() {
   };
 
   useEffect(() => {
+    const checkUserAuth = async () => {
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+
+        if (res.ok && data.user.sessionId === sessionId) {
+          setIsUserAuthenticated(true);
+          setUserRole(data.user.role);
+        }
+      } catch (err) {
+        setIsUserAuthenticated(false);
+      }
+    };
+
     checkUserAuth();
-  }, []);
+  }, [sessionId]);
 
   useEffect(() => {
+    const getSessionInfo = async () => {
+      try {
+        const res = await fetch(`/api/sessions/${sessionId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+
+          setParticipants(data.session.participants);
+          setComputedLocation(data.session.computedLocation);
+          setOverrideLocation(data.session.overrideLocation);
+          setSessionStatus(data.session.status);
+          setInviteUrl(
+            `${window.location.origin}/s/${data.session.id}/join?token=${data.session.inviteToken}`
+          );
+        } else {
+          setPageError('Failed to load session info');
+        }
+      } catch (err) {
+        setPageError('Failed to load session info');
+      }
+    };
+
     if (isUserAuthenticated) {
       getSessionInfo();
     }
-  }, [isUserAuthenticated]);
+  }, [isUserAuthenticated, sessionId]);
 
   if (pageError) {
     return (

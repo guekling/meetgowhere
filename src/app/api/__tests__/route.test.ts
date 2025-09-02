@@ -62,7 +62,6 @@ describe('POST /api/sessions', () => {
       headers: { 'Content-Type': 'application/json' },
     });
     const res = await POST_SESSION(req);
-    const data = await res.json();
     expect(res.status).toBe(200);
 
     const cookie = res.headers.get('Set-Cookie');
@@ -392,7 +391,6 @@ describe('GET /api/auth', () => {
       body: JSON.stringify({ username: 'initiator', location: generateRandomCoordinates() }),
     });
     const res = await POST_SESSION(req);
-    const data = await res.json();
 
     const cookie = res.headers.get('Set-Cookie');
     initiatorUserToken = cookie?.match(/userToken=([^;]*)/)[1];

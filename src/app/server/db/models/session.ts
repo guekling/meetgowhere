@@ -13,13 +13,13 @@ export interface SessionAttributes {
   updated_at?: Date | null;
 }
 
-export interface SessionCreationAttributes
-  extends Optional<
-    SessionAttributes,
-    'id' | 'ended_at' | 'computed_location' | 'override_location' | 'updated_at'
-  > {}
+export type SessionCreationAttributes = Optional<
+  SessionAttributes,
+  'id' | 'ended_at' | 'computed_location' | 'override_location' | 'updated_at'
+>;
 
 export class Session extends Model<SessionAttributes, SessionCreationAttributes> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static associate(models: any) {
     // A session is created by one user
     Session.belongsTo(models.User, { foreignKey: 'created_by', as: 'creator' });
