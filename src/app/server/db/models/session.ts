@@ -17,7 +17,7 @@ export interface SessionCreationAttributes
   extends Optional<
     SessionAttributes,
     'id' | 'ended_at' | 'computed_location' | 'override_location' | 'updated_at'
-  > { }
+  > {}
 
 export class Session extends Model<SessionAttributes, SessionCreationAttributes> {
   static associate(models: any) {

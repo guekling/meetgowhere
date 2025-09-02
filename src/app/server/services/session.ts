@@ -1,7 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import db from '../db/models';
-import { LatLng, LocationInfo, LocationSource, ParticipantInfo, SessionInfo, SessionStatus } from '@/app/types';
+import {
+  LatLng,
+  LocationInfo,
+  LocationSource,
+  ParticipantInfo,
+  SessionInfo,
+  SessionStatus,
+} from '@/app/types';
 import { Session } from '../db/models/session';
 import { computeCentroid } from '../utils/geo';
 
@@ -66,7 +73,10 @@ export async function getSessionUserLocations(sessionId: string): Promise<LatLng
   return locations;
 }
 
-export async function computeLocation(sessionId: string, locations: LatLng[]): Promise<LocationInfo> {
+export async function computeLocation(
+  sessionId: string,
+  locations: LatLng[]
+): Promise<LocationInfo> {
   const centroid = computeCentroid(locations);
   const computedLocation = {
     lat: centroid.lat,
@@ -101,9 +111,9 @@ export async function getSessionInformation(sessionId: string): Promise<SessionI
       role: user.getDataValue('role'),
       location: location
         ? {
-          lat: location.lat,
-          lng: location.lng,
-        }
+            lat: location.lat,
+            lng: location.lng,
+          }
         : null,
     };
   });

@@ -23,7 +23,7 @@ export async function createUser(
 
     return { userId, token };
   } catch (error) {
-    console.error("Failed to create user:", error);
+    console.error('Failed to create user:', error);
     throw new Error('Failed to create user');
   }
 }

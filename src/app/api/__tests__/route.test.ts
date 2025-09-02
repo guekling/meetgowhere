@@ -18,7 +18,7 @@ jest.mock('next/headers', () => ({
 import { POST as POST_SESSION } from '../sessions/route';
 import { POST as POST_JOIN } from '../sessions/[id]/join/route';
 import { GET as GET_VALIDATE } from '../sessions/[id]/validate/route';
-import { POST as POST_COMPUTE } from '../sessions/[id]/compute/route'
+import { POST as POST_COMPUTE } from '../sessions/[id]/compute/route';
 import { GET as GET_SESSION } from '../sessions/[id]/route';
 import { GET as GET_AUTH } from '../auth/route';
 
@@ -258,13 +258,16 @@ describe('POST /api/sessions/:id/compute', () => {
         get: jest.fn(),
       }));
 
-      const joinReq = new NextRequest(`http://localhost/api/sessions/${sessionId}/join?token=${inviteToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, location: generateRandomCoordinates() }),
-      });
+      const joinReq = new NextRequest(
+        `http://localhost/api/sessions/${sessionId}/join?token=${inviteToken}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, location: generateRandomCoordinates() }),
+        }
+      );
       const joinRes = await POST_JOIN(joinReq, { params: Promise.resolve({ id: sessionId }) });
       expect(joinRes.status).toBe(200);
       const joinData = await joinRes.json();
@@ -295,7 +298,7 @@ describe('POST /api/sessions/:id/compute', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': `userToken=${initiatorUserToken}`
+        Cookie: `userToken=${initiatorUserToken}`,
       },
       body: JSON.stringify({}),
     });
@@ -325,7 +328,7 @@ describe('POST /api/sessions/:id/compute', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': `userToken=${initiatorUserToken}`
+        Cookie: `userToken=${initiatorUserToken}`,
       },
       body: JSON.stringify({}),
     });
@@ -366,7 +369,7 @@ describe('GET /api/sessions/:id', () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': `userToken=${initiatorUserToken}`
+        Cookie: `userToken=${initiatorUserToken}`,
       },
     });
     const res = await GET_SESSION(req, { params: Promise.resolve({ id: sessionId }) });
@@ -400,7 +403,7 @@ describe('GET /api/auth', () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': `userToken=${initiatorUserToken}`
+        Cookie: `userToken=${initiatorUserToken}`,
       },
     });
     const res = await GET_AUTH(req);
