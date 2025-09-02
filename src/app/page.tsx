@@ -50,6 +50,35 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  const checkUserAuth = async () => {
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setIsUserAuthenticated(true);
+        setSessionId(data.user.sessionId);
+      }
+    } catch (err) {
+      setIsUserAuthenticated(false);
+    }
+  };
+
+  useEffect(() => {
+    checkUserAuth();
+  }, []);
+
+  // if user is already authenticated, redirect to session info page
+  useEffect(() => {
+    if (isUserAuthenticated && sessionId) {
+      router.push(`/s/${sessionId}`);
+    }
+  }, [isUserAuthenticated, sessionId, router]);
+
   // if user has successfully created a session, show invite link
   if (showInvite) {
     return <SessionCreatedPage name={username} inviteUrl={inviteUrl} />;
@@ -73,7 +102,7 @@ export default function Home() {
           {loading ? 'Creating...' : 'Create'}
         </button>
         {error && <div className="w-full text-center text-red-600 mt-2">{error}</div>}
-    </div>
+      </div>
     </main>
   );
 }
