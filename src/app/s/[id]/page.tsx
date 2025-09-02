@@ -36,7 +36,6 @@ export default function Session() {
 
       if (res.ok) {
         const data = await res.json();
-        console.log('data', data);
 
         setParticipants(data.session.participants);
         setComputedLocation(data.session.computedLocation);
@@ -60,8 +59,6 @@ export default function Session() {
         headers: { 'Content-Type': 'application/json' },
       });
       const data = await res.json();
-
-      console.log('auth', data);
 
       if (res.ok && data.user.sessionId === sessionId) {
         setIsUserAuthenticated(true);
