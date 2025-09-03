@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: message }, { status });
     }
 
-    const user = await getUserFromRequest(request);
+    const user = await getUserFromRequest();
 
     if (!user || !(await isUserAnInitiator(user.userId))) {
       console.error('User is not authenticated');

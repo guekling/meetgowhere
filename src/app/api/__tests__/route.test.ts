@@ -21,6 +21,8 @@ import { GET as GET_VALIDATE } from '../sessions/[id]/validate/route';
 import { POST as POST_COMPUTE } from '../sessions/[id]/compute/route';
 import { GET as GET_SESSION } from '../sessions/[id]/route';
 import { GET as GET_AUTH } from '../auth/route';
+import { PATCH as PATCH_LOCATION } from '../sessions/[id]/location/route';
+import { PATCH as PATCH_END_SESSION } from '../sessions/[id]/end/route';
 
 beforeAll(() => {
   execSync('npx sequelize-cli db:migrate --env test');
@@ -408,5 +410,115 @@ describe('GET /api/auth', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data).toHaveProperty('user');
+  });
+});
+
+describe('PATCH /api/sessions/:id/location', () => {
+  let sessionId: string;
+  let initiatorUserToken: string;
+  let originalRandomCoordinates: LatLng;
+
+  beforeAll(async () => {
+    // create new session
+    const req = new NextRequest('http://localhost/api/sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'testuser' }),
+    });
+    const res = await POST_SESSION(req);
+    const data = await res.json();
+    sessionId = data.sessionId;
+
+    const cookie = res.headers.get('Set-Cookie');
+    initiatorUserToken = cookie?.match(/userToken=([^;]*)/)[1];
+  });
+
+  it('should update session location', async () => {
+    (cookies as jest.Mock).mockImplementation(() => ({
+      get: jest.fn(() => ({ value: initiatorUserToken })),
+    }));
+
+    originalRandomCoordinates = generateRandomCoordinates();
+    const { lat, lng } = originalRandomCoordinates;
+
+    const req = new NextRequest(`http://localhost/api/sessions/${sessionId}/location`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `userToken=${initiatorUserToken}`,
+      },
+      body: JSON.stringify({ lat, lng }),
+    });
+    const res = await PATCH_LOCATION(req, { params: Promise.resolve({ id: sessionId }) });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toHaveProperty('session');
+    expect(data.session).toHaveProperty('override_location');
+    expect(data.session.override_location).toEqual(expect.objectContaining({ lat, lng }));
+  });
+
+  it('should do nothing if session already has overriden location', async () => {
+    const { lat, lng } = generateRandomCoordinates();
+
+    const req = new NextRequest(`http://localhost/api/sessions/${sessionId}/location`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `userToken=${initiatorUserToken}`,
+      },
+      body: JSON.stringify({ lat, lng }),
+    });
+    const res = await PATCH_LOCATION(req, { params: Promise.resolve({ id: sessionId }) });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toHaveProperty('session');
+    expect(data.session).toHaveProperty('override_location');
+    expect(data.session.override_location).not.toEqual(expect.objectContaining({ lat, lng }));
+    expect(data.session.override_location).toEqual(
+      expect.objectContaining(originalRandomCoordinates)
+    );
+  });
+});
+
+describe('PATCH /api/sessions/:id/end', () => {
+  let sessionId: string;
+  let initiatorUserToken: string;
+
+  beforeAll(async () => {
+    // create new session
+    const req = new NextRequest('http://localhost/api/sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: 'testuser' }),
+    });
+    const res = await POST_SESSION(req);
+    const data = await res.json();
+    sessionId = data.sessionId;
+
+    const cookie = res.headers.get('Set-Cookie');
+    initiatorUserToken = cookie?.match(/userToken=([^;]*)/)[1];
+  });
+
+  it('should end session', async () => {
+    (cookies as jest.Mock).mockImplementation(() => ({
+      get: jest.fn(() => ({ value: initiatorUserToken })),
+    }));
+
+    const req = new NextRequest(`http://localhost/api/sessions/${sessionId}/end`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: `userToken=${initiatorUserToken}`,
+      },
+    });
+    const res = await PATCH_END_SESSION(req, { params: Promise.resolve({ id: sessionId }) });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toHaveProperty('session');
+    expect(data.session).toHaveProperty('status', 'ended');
   });
 });

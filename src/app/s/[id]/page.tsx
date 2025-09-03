@@ -1,18 +1,25 @@
 'use client';
 
+import SessionCancelledPage from '@/app/components/SessionCancelledPage';
+import SessionEndedPage from '@/app/components/SessionEndedPage';
 import SessionParticipantsTable from '@/app/components/SessionParticipantsTable';
+import UpdateLocationModal from '@/app/components/UpdateLocationModal';
 import { LocationInfo, SessionStatus, UserRoles } from '@/app/types';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function Session() {
   const params = useParams();
-  const { id: sessionId } = params;
+  const sessionId =
+    typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '';
 
+  const [pageLoading, setPageLoading] = useState(false);
   const [pageError, setPageError] = useState('');
-  const [computeLocError, setComputeLocError] = useState('');
 
+  const [computeLocError, setComputeLocError] = useState('');
   const [computeLocLoading, setComputeLocLoading] = useState(false);
+
+  const [endSessionError, setEndSessionError] = useState('');
 
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState('');
@@ -24,6 +31,9 @@ export default function Session() {
   const [inviteUrl, setInviteUrl] = useState('');
 
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [shouldDisableComputeBtn, setShouldDisableComputeBtn] = useState(true);
 
   const onComputeLocation = async () => {
     setComputeLocLoading(true);
@@ -48,6 +58,65 @@ export default function Session() {
     }
   };
 
+  const getSessionInfo = useCallback(async () => {
+    setPageLoading(true);
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+
+        const availLocations =
+          data.session.participants.length > 1 &&
+          data.session.participants
+            .map((participant) => participant.location)
+            .filter((location) => location !== null);
+
+        setParticipants(data.session.participants);
+        setComputedLocation(data.session.computedLocation);
+        setOverrideLocation(data.session.overrideLocation);
+        setSessionStatus(data.session.status);
+        setInviteUrl(
+          `${window.location.origin}/s/${data.session.id}/join?token=${data.session.inviteToken}`
+        );
+        setShouldDisableComputeBtn(
+          availLocations.length < 2 || data.session.computedLocation !== null
+        );
+      } else {
+        setPageError('Failed to load session info');
+      }
+    } catch (err) {
+      setPageError('Failed to load session info');
+    } finally {
+      setPageLoading(false);
+    }
+  }, [sessionId]);
+
+  const onEndSession = async () => {
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/end`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setSessionStatus(data.session.status);
+      } else {
+        setEndSessionError('Failed to end session');
+      }
+    } catch (error) {
+      setEndSessionError('Failed to end session');
+    }
+  };
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(inviteUrl);
@@ -59,6 +128,7 @@ export default function Session() {
   };
 
   useEffect(() => {
+    setPageLoading(true);
     const checkUserAuth = async () => {
       try {
         const res = await fetch('/api/auth', {
@@ -73,6 +143,8 @@ export default function Session() {
         }
       } catch (err) {
         setIsUserAuthenticated(false);
+      } finally {
+        setPageLoading(false);
       }
     };
 
@@ -80,37 +152,22 @@ export default function Session() {
   }, [sessionId]);
 
   useEffect(() => {
-    const getSessionInfo = async () => {
-      try {
-        const res = await fetch(`/api/sessions/${sessionId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-
-          setParticipants(data.session.participants);
-          setComputedLocation(data.session.computedLocation);
-          setOverrideLocation(data.session.overrideLocation);
-          setSessionStatus(data.session.status);
-          setInviteUrl(
-            `${window.location.origin}/s/${data.session.id}/join?token=${data.session.inviteToken}`
-          );
-        } else {
-          setPageError('Failed to load session info');
-        }
-      } catch (err) {
-        setPageError('Failed to load session info');
-      }
-    };
-
     if (isUserAuthenticated) {
       getSessionInfo();
     }
-  }, [isUserAuthenticated, sessionId]);
+  }, [isUserAuthenticated, sessionId, getSessionInfo]);
+
+  if (pageLoading) {
+    // TODO refactor
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <div className="text-blue-600 font-semibold">Loading...</div>
+        </div>
+      </main>
+    );
+  }
 
   if (pageError) {
     return (
@@ -126,8 +183,13 @@ export default function Session() {
   }
 
   if (sessionStatus !== SessionStatus.ACTIVE) {
-    // TODO: Ended Session Page
-    return <div>Session has ended</div>;
+    const location = computedLocation ? computedLocation : overrideLocation;
+
+    if (!location) {
+      return <SessionCancelledPage />;
+    }
+
+    return <SessionEndedPage location={location} />;
   }
 
   if (userRole === UserRoles.PARTICIPANT) {
@@ -167,11 +229,12 @@ export default function Session() {
       <div>
         <div className="w-full mb-6 columns-2 gap-4 flex justify-between">
           <button
-            // onClick={onEndSession}
+            onClick={onEndSession}
             className="py-2 px-4 bg-red-600 text-white rounded hover:bg-red-700 transition"
           >
             End Session
           </button>
+          {endSessionError && <div className="text-red-600">{endSessionError}</div>}
 
           <div className="flex gap-2">
             <button
@@ -211,24 +274,31 @@ export default function Session() {
         {computedLocation || overrideLocation ? (
           <div className="flex gap-4">
             <button className="py-2 px-4 bg-green-600 text-white rounded">
-              Meeting Location:{' '}
-              {computedLocation
-                ? `(${computedLocation.lat}, ${computedLocation.lng})`
-                : `(${overrideLocation.lat}, ${overrideLocation.lng})`}
+              Meeting Location:
+              {overrideLocation
+                ? `(${overrideLocation.lat}, ${overrideLocation.lng})`
+                : `(${computedLocation.lat}, ${computedLocation.lng})`}
             </button>
 
-            <button
-              //   onClick={onOverrideLocation}
-              className="py-2 px-4 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition"
-            >
-              Update Location
-            </button>
+            {!overrideLocation && (
+              <button
+                onClick={() => setShowLocationModal(true)}
+                className="py-2 px-4 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition"
+              >
+                Update Location
+              </button>
+            )}
           </div>
         ) : (
           <>
             <button
               onClick={onComputeLocation}
-              className="py-2 px-6 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition"
+              className={`py-2 px-6 rounded transition
+                ${shouldDisableComputeBtn
+                  ? 'bg-gray-400 text-gray-200 opacity-50 cursor-not-allowed'
+                  : 'bg-yellow-600 text-white hover:bg-yellow-700'}
+                `}
+              disabled={shouldDisableComputeBtn}
             >
               {computeLocLoading ? 'Computing...' : 'Compute Meeting Location'}
             </button>
@@ -237,6 +307,13 @@ export default function Session() {
         )}
       </div>
       {/* End Footer */}
+
+      <UpdateLocationModal
+        open={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        sessionId={sessionId}
+        onSuccess={getSessionInfo}
+      />
     </main>
   );
 }

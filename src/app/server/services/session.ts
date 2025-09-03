@@ -111,9 +111,9 @@ export async function getSessionInformation(sessionId: string): Promise<SessionI
       role: user.getDataValue('role'),
       location: location
         ? {
-            lat: location.lat,
-            lng: location.lng,
-          }
+          lat: location.lat,
+          lng: location.lng,
+        }
         : null,
     };
   });
@@ -130,4 +130,33 @@ export async function getSessionInformation(sessionId: string): Promise<SessionI
     overrideLocation: session.getDataValue('override_location'),
     participants: usersInfo,
   };
+}
+
+export async function overrideLocation(sessionId: string, location: LatLng): Promise<Session> {
+  const session = await getSessionById(sessionId);
+  if (session.getDataValue('override_location') !== null) {
+    return session;
+  }
+
+  const updatedSession = await session.update({
+    override_location: {
+      lat: location.lat,
+      lng: location.lng,
+      source: LocationSource.MANUAL,
+      updated_at: new Date().toISOString(),
+    },
+  });
+
+  return updatedSession;
+}
+
+export async function endSession(sessionId: string): Promise<Session> {
+  const session = await getSessionById(sessionId);
+
+  const updatedSession = await session.update({
+    status: SessionStatus.ENDED,
+    ended_at: new Date(),
+  });
+
+  return updatedSession;
 }
