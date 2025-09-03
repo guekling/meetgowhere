@@ -172,7 +172,7 @@ export default function Session() {
   }
 
   if (!isUserAuthenticated) {
-    return <SessionInvalidPage />
+    return <SessionInvalidPage />;
   }
 
   if (sessionStatus !== SessionStatus.ACTIVE) {
@@ -287,9 +287,11 @@ export default function Session() {
             <button
               onClick={onComputeLocation}
               className={`py-2 px-6 rounded transition
-                ${shouldDisableComputeBtn
-                  ? 'bg-gray-400 text-gray-200 opacity-50 cursor-not-allowed'
-                  : 'bg-yellow-600 text-white hover:bg-yellow-700'}
+                ${
+                  shouldDisableComputeBtn
+                    ? 'bg-gray-400 text-gray-200 opacity-50 cursor-not-allowed'
+                    : 'bg-yellow-600 text-white hover:bg-yellow-700'
+                }
                 `}
               disabled={shouldDisableComputeBtn}
             >

@@ -109,7 +109,7 @@ export default function JoinSession() {
   }, [showSessionInfoPage, sessionId, router]);
 
   if (!isSessionValid) {
-    return <SessionInvalidPage />
+    return <SessionInvalidPage />;
   }
 
   return (

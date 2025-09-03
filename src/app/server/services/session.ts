@@ -111,9 +111,9 @@ export async function getSessionInformation(sessionId: string): Promise<SessionI
       role: user.getDataValue('role'),
       location: location
         ? {
-          lat: location.lat,
-          lng: location.lng,
-        }
+            lat: location.lat,
+            lng: location.lng,
+          }
         : null,
     };
   });
