@@ -1,13 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   name: string;
   inviteUrl: string;
+  sessionId: string;
 }
 
-export default function SessionCreatedPage({ name, inviteUrl }: Props) {
+export default function SessionCreatedPage({ name, inviteUrl, sessionId }: Props) {
+  const router = useRouter();
+
   const [copiedLink, setCopiedLink] = useState(false);
 
   const handleCopy = async () => {
@@ -47,6 +51,12 @@ export default function SessionCreatedPage({ name, inviteUrl }: Props) {
           </svg>
         </button>
         {copiedLink && <span className="text-green-600 mt-2">Copied!</span>}
+        <button
+          className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition mb-2"
+          onClick={() => router.push(`/s/${sessionId}`)}
+        >
+          View Session Details
+        </button>
       </div>
     </main>
   );

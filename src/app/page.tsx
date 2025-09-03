@@ -5,6 +5,7 @@ import SessionCreatedPage from './components/SessionCreatedPage';
 import { getGeoLocation } from './utils';
 import { useRouter } from 'next/navigation';
 import LoadingPage from './components/LoadingPage';
+import { CreateSessionResponse } from './types/responses';
 
 export default function Home() {
   const router = useRouter();
@@ -37,12 +38,13 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, location }),
       });
-      const data = await res.json();
+      const data: CreateSessionResponse = await res.json();
 
       if (res.ok) {
         setInviteUrl(
-          `${window.location.origin}/s/${data.sessionId}/join?token=${data.inviteToken}`
+          `${window.location.origin}/s/${data.session.id}/join?token=${data.session.invite_token}`
         );
+        setSessionId(data.session.id);
         setShowInvite(true);
       } else {
         setError('Failed to create session');
@@ -88,7 +90,7 @@ export default function Home() {
 
   // if user has successfully created a session, show invite link
   if (showInvite) {
-    return <SessionCreatedPage name={username} inviteUrl={inviteUrl} />;
+    return <SessionCreatedPage name={username} inviteUrl={inviteUrl} sessionId={sessionId} />;
   }
 
   if (pageLoading) {

@@ -23,6 +23,7 @@ import { GET as GET_SESSION } from '../sessions/[id]/route';
 import { GET as GET_AUTH } from '../auth/route';
 import { PATCH as PATCH_LOCATION } from '../sessions/[id]/location/route';
 import { PATCH as PATCH_END_SESSION } from '../sessions/[id]/end/route';
+import { CreateSessionResponse } from '@/app/types/responses';
 
 beforeAll(() => {
   execSync('npx sequelize-cli db:migrate --env test');
@@ -51,10 +52,11 @@ describe('POST /api/sessions', () => {
       headers: { 'Content-Type': 'application/json' },
     });
     const res = await POST_SESSION(req);
-    const data = await res.json();
+    const data: CreateSessionResponse = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toHaveProperty('sessionId');
-    expect(data).toHaveProperty('inviteToken');
+    expect(data).toHaveProperty('session');
+    expect(data.session).toHaveProperty('id');
+    expect(data.session).toHaveProperty('invite_token');
   });
 
   it('should set a userToken cookie', async () => {
@@ -80,10 +82,10 @@ describe('POST /api/sessions', () => {
       headers: { 'Content-Type': 'application/json' },
     });
     const res = await POST_SESSION(req);
-    const data = await res.json();
+    const data: CreateSessionResponse = await res.json();
     expect(res.status).toBe(200);
 
-    const session = await db.Session.findByPk(data.sessionId);
+    const session = await db.Session.findByPk(data.session.id);
     expect(session).not.toBeNull();
     const user = await db.User.findByPk(session?.getDataValue('created_by'));
     expect(user).not.toBeNull();
@@ -107,9 +109,9 @@ describe('POST /api/sessions/:id/join', () => {
       body: JSON.stringify({ username: 'testuser' }),
     });
     const res = await POST_SESSION(req);
-    const data = await res.json();
-    sessionId = data.sessionId;
-    inviteToken = data.inviteToken;
+    const data: CreateSessionResponse = await res.json();
+    sessionId = data.session.id;
+    inviteToken = data.session.invite_token;
   });
 
   it('should join a session and set userToken cookie', async () => {
@@ -184,9 +186,9 @@ describe('POST /api/sessions/:id/validate', () => {
       body: JSON.stringify({ username: 'testuser' }),
     });
     const res = await POST_SESSION(req);
-    const data = await res.json();
-    sessionId = data.sessionId;
-    inviteToken = data.inviteToken;
+    const data: CreateSessionResponse = await res.json();
+    sessionId = data.session.id;
+    inviteToken = data.session.invite_token;
   });
 
   it('should return 200 if token is valid', async () => {
@@ -244,9 +246,9 @@ describe('POST /api/sessions/:id/compute', () => {
       body: JSON.stringify({ username: 'initiator', location: generateRandomCoordinates() }),
     });
     const res = await POST_SESSION(req);
-    const data = await res.json();
-    sessionId = data.sessionId;
-    inviteToken = data.inviteToken;
+    const data: CreateSessionResponse = await res.json();
+    sessionId = data.session.id;
+    inviteToken = data.session.invite_token;
 
     const cookie = res.headers.get('Set-Cookie');
     initiatorUserToken = cookie?.match(/userToken=([^;]*)/)[1];
@@ -354,8 +356,8 @@ describe('GET /api/sessions/:id', () => {
       body: JSON.stringify({ username: 'testuser' }),
     });
     const res = await POST_SESSION(req);
-    const data = await res.json();
-    sessionId = data.sessionId;
+    const data: CreateSessionResponse = await res.json();
+    sessionId = data.session.id;
 
     const cookie = res.headers.get('Set-Cookie');
     initiatorUserToken = cookie?.match(/userToken=([^;]*)/)[1];
@@ -428,8 +430,8 @@ describe('PATCH /api/sessions/:id/location', () => {
       body: JSON.stringify({ username: 'testuser' }),
     });
     const res = await POST_SESSION(req);
-    const data = await res.json();
-    sessionId = data.sessionId;
+    const data: CreateSessionResponse = await res.json();
+    sessionId = data.session.id;
 
     const cookie = res.headers.get('Set-Cookie');
     initiatorUserToken = cookie?.match(/userToken=([^;]*)/)[1];
@@ -496,8 +498,8 @@ describe('PATCH /api/sessions/:id/end', () => {
       body: JSON.stringify({ username: 'testuser' }),
     });
     const res = await POST_SESSION(req);
-    const data = await res.json();
-    sessionId = data.sessionId;
+    const data: CreateSessionResponse = await res.json();
+    sessionId = data.session.id;
 
     const cookie = res.headers.get('Set-Cookie');
     initiatorUserToken = cookie?.match(/userToken=([^;]*)/)[1];

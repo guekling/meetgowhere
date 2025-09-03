@@ -23,7 +23,9 @@ export async function POST(request: Request) {
     const { userId, token } = await createUser(username, UserRoles.INITIATOR, sessionId, location);
     const session = await createSession(sessionId, userId);
 
-    const res = NextResponse.json({ sessionId, inviteToken: session.getDataValue('invite_token') });
+    const res = NextResponse.json({
+      session: { id: sessionId, invite_token: session.getDataValue('invite_token') },
+    });
     res.cookies.set('userToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
