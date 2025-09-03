@@ -7,6 +7,12 @@ import SessionInvalidPage from '@/app/components/SessionInvalidPage';
 import SessionParticipantsTable from '@/app/components/SessionParticipantsTable';
 import UpdateLocationModal from '@/app/components/UpdateLocationModal';
 import { LocationInfo, SessionStatus, UserRoles } from '@/app/types';
+import {
+  AuthResponse,
+  ComputeLocationResponse,
+  EndSessionResponse,
+  GetSessionResponse,
+} from '@/app/types/responses';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -48,8 +54,8 @@ export default function Session() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setComputedLocation(data.computedLocation);
+        const data: ComputeLocationResponse = await res.json();
+        setComputedLocation(data.computed_location);
       } else {
         setComputeLocError('Failed to compute location');
       }
@@ -71,23 +77,21 @@ export default function Session() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: GetSessionResponse = await res.json();
 
-        const availLocations =
-          data.session.participants.length > 1 &&
-          data.session.participants
-            .map((participant) => participant.location)
-            .filter((location) => location !== null);
+        const availLocations = data.session.participants
+          .map((participant) => participant.location)
+          .filter((location) => location !== null);
 
         setParticipants(data.session.participants);
-        setComputedLocation(data.session.computedLocation);
-        setOverrideLocation(data.session.overrideLocation);
+        setComputedLocation(data.session.computed_location);
+        setOverrideLocation(data.session.override_location);
         setSessionStatus(data.session.status);
         setInviteUrl(
-          `${window.location.origin}/s/${data.session.id}/join?token=${data.session.inviteToken}`
+          `${window.location.origin}/s/${data.session.id}/join?token=${data.session.invite_token}`
         );
         setShouldDisableComputeBtn(
-          availLocations.length < 2 || data.session.computedLocation !== null
+          availLocations.length < 2 || data.session.computed_location !== null
         );
       } else {
         setPageError('Failed to load session info');
@@ -109,7 +113,7 @@ export default function Session() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data: EndSessionResponse = await res.json();
         setSessionStatus(data.session.status);
       } else {
         setEndSessionError('Failed to end session');
@@ -137,7 +141,7 @@ export default function Session() {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
-        const data = await res.json();
+        const data: AuthResponse = await res.json();
 
         if (res.ok && data.user.sessionId === sessionId) {
           setIsUserAuthenticated(true);
@@ -176,7 +180,7 @@ export default function Session() {
   }
 
   if (sessionStatus !== SessionStatus.ACTIVE) {
-    const location = computedLocation ? computedLocation : overrideLocation;
+    const location = overrideLocation ? overrideLocation : computedLocation;
 
     if (!location) {
       return <SessionCancelledPage />;
@@ -200,9 +204,9 @@ export default function Session() {
             <div className="flex gap-4">
               <button className="py-2 px-4 bg-green-600 text-white rounded">
                 Meeting Location:{' '}
-                {computedLocation
-                  ? `(${computedLocation.lat}, ${computedLocation.lng})`
-                  : `(${overrideLocation.lat}, ${overrideLocation.lng})`}
+                {overrideLocation
+                  ? `(${overrideLocation.lat}, ${overrideLocation.lng})`
+                  : `(${computedLocation.lat}, ${computedLocation.lng})`}
               </button>
             </div>
           ) : (

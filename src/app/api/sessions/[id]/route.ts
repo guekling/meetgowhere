@@ -12,8 +12,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const session = await getSessionById(sessionId);
     if (!session) {
-      console.error('Invalid invite token');
-      const { message, status } = ErrorDetails[ErrorType.INVALID_INVITE_TOKEN];
+      console.error('Invalid session');
+      const { message, status } = ErrorDetails[ErrorType.INVALID_SESSION];
       return NextResponse.json({ error: message }, { status });
     }
 

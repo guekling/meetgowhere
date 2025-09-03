@@ -5,7 +5,7 @@ import SessionCreatedPage from './components/SessionCreatedPage';
 import { getGeoLocation } from './utils';
 import { useRouter } from 'next/navigation';
 import LoadingPage from './components/LoadingPage';
-import { CreateSessionResponse } from './types/responses';
+import { AuthResponse, CreateSessionResponse } from './types/responses';
 
 export default function Home() {
   const router = useRouter();
@@ -64,7 +64,7 @@ export default function Home() {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
-        const data = await res.json();
+        const data: AuthResponse = await res.json();
 
         if (res.ok) {
           setIsUserAuthenticated(true);

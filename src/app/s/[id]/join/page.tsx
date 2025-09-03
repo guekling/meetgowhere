@@ -1,6 +1,7 @@
 'use client';
 
 import SessionInvalidPage from '@/app/components/SessionInvalidPage';
+import { AuthResponse } from '@/app/types/responses';
 import { getGeoLocation } from '@/app/utils';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -20,6 +21,7 @@ export default function JoinSession() {
 
   const [isSessionValid, setIsSessionValid] = useState(false);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
+  const [userAuthenticatedSession, setUserAuthenticatedSession] = useState('');
 
   const handleJoinSession = async () => {
     if (!username.trim()) {
@@ -61,6 +63,8 @@ export default function JoinSession() {
         });
 
         if (res.ok) {
+          const data: AuthResponse = await res.json();
+          setUserAuthenticatedSession(data.user.sessionId);
           setIsUserAuthenticated(true);
         }
       } catch (err) {
@@ -97,9 +101,9 @@ export default function JoinSession() {
   // if user is already authenticated, redirect to session info page
   useEffect(() => {
     if (isUserAuthenticated) {
-      router.push(`/s/${sessionId}`);
+      router.push(`/s/${userAuthenticatedSession}`);
     }
-  }, [isUserAuthenticated, sessionId, router]);
+  }, [isUserAuthenticated, userAuthenticatedSession, router]);
 
   // if user has successfully joined, redirect to session info page
   useEffect(() => {

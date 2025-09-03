@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { UpdateLocationResponse } from '../types/responses';
 
 interface UpdateLocationModalProps {
   open: boolean;
@@ -33,7 +34,7 @@ export default function UpdateLocationModal({
         },
         body: JSON.stringify({ lat, lng }),
       });
-      const data = await res.json();
+      const data: UpdateLocationResponse = await res.json();
 
       if (res.ok) {
         setLat(data.session.override_location.lat);

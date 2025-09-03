@@ -121,13 +121,13 @@ export async function getSessionInformation(sessionId: string): Promise<SessionI
   return {
     id: session.getDataValue('id'),
     status: session.getDataValue('status'),
-    createdBy: session.getDataValue('created_by'),
-    createdAt: session.getDataValue('created_at'),
-    updatedAt: session.getDataValue('updated_at'),
-    endedAt: session.getDataValue('ended_at'),
-    inviteToken: session.getDataValue('invite_token'),
-    computedLocation: session.getDataValue('computed_location'),
-    overrideLocation: session.getDataValue('override_location'),
+    created_by: session.getDataValue('created_by'),
+    created_at: session.getDataValue('created_at'),
+    updated_at: session.getDataValue('updated_at'),
+    ended_at: session.getDataValue('ended_at'),
+    invite_token: session.getDataValue('invite_token'),
+    computed_location: session.getDataValue('computed_location'),
+    override_location: session.getDataValue('override_location'),
     participants: usersInfo,
   };
 }

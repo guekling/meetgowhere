@@ -12,8 +12,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   try {
     if (!(await isSessionActive(sessionId))) {
-      console.error('Invalid invite token');
-      const { message, status } = ErrorDetails[ErrorType.INVALID_INVITE_TOKEN];
+      console.error('Invalid session');
+      const { message, status } = ErrorDetails[ErrorType.INVALID_SESSION];
       return NextResponse.json({ error: message }, { status });
     }
 

@@ -34,13 +34,13 @@ export interface ParticipantInfo {
 export interface SessionInfo {
   id: string;
   status: SessionStatus;
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-  endedAt: Date | null;
-  inviteToken: string;
-  computedLocation: LocationInfo | null;
-  overrideLocation: LocationInfo | null;
+  created_by: string;
+  created_at: Date;
+  updated_at: Date;
+  ended_at: Date | null;
+  invite_token: string;
+  computed_location: LocationInfo | null;
+  override_location: LocationInfo | null;
   participants: ParticipantInfo[];
 }
 
@@ -50,6 +50,7 @@ export enum ErrorType {
   INVALID_INVITE_TOKEN = 'INVALID_INVITE_TOKEN',
   UNAUTHORIZED = 'UNAUTHORIZED',
   BAD_REQUEST = 'BAD_REQUEST',
+  INVALID_SESSION = 'INVALID_SESSION',
 }
 
 export const ErrorDetails: Record<ErrorType, { message: string; status: number }> = {
@@ -58,4 +59,5 @@ export const ErrorDetails: Record<ErrorType, { message: string; status: number }
   [ErrorType.INVALID_INVITE_TOKEN]: { message: 'Invalid invite token', status: 400 },
   [ErrorType.UNAUTHORIZED]: { message: 'Unauthorized', status: 401 },
   [ErrorType.BAD_REQUEST]: { message: 'Bad request', status: 400 },
+  [ErrorType.INVALID_SESSION]: { message: 'Invalid session', status: 400 },
 };

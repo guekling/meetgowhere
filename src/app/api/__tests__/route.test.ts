@@ -23,7 +23,14 @@ import { GET as GET_SESSION } from '../sessions/[id]/route';
 import { GET as GET_AUTH } from '../auth/route';
 import { PATCH as PATCH_LOCATION } from '../sessions/[id]/location/route';
 import { PATCH as PATCH_END_SESSION } from '../sessions/[id]/end/route';
-import { CreateSessionResponse } from '@/app/types/responses';
+import {
+  AuthResponse,
+  ComputeLocationResponse,
+  CreateSessionResponse,
+  EndSessionResponse,
+  GetSessionResponse,
+  UpdateLocationResponse,
+} from '@/app/types/responses';
 
 beforeAll(() => {
   execSync('npx sequelize-cli db:migrate --env test');
@@ -227,7 +234,7 @@ describe('POST /api/sessions/:id/validate', () => {
     const res = await GET_VALIDATE(req, { params: Promise.resolve({ id: sessionId }) });
     expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data).toHaveProperty('error', 'Invalid invite token');
+    expect(data).toHaveProperty('error', ErrorDetails[ErrorType.INVALID_SESSION].message);
   });
 });
 
@@ -288,7 +295,7 @@ describe('POST /api/sessions/:id/compute', () => {
     });
     const res = await POST_COMPUTE(req, { params: { id: sessionId } });
     expect(res.status).toBe(ErrorDetails[ErrorType.UNAUTHORIZED].status);
-    const data = await res.json();
+    const data: ComputeLocationResponse = await res.json();
     expect(data).toHaveProperty('error', ErrorDetails[ErrorType.UNAUTHORIZED].message);
   });
 
@@ -307,8 +314,8 @@ describe('POST /api/sessions/:id/compute', () => {
     });
     const res = await POST_COMPUTE(req, { params: { id: sessionId } });
     expect(res.status).toBe(200);
-    const data = await res.json();
-    expect(data).toHaveProperty('computedLocation');
+    const data: ComputeLocationResponse = await res.json();
+    expect(data).toHaveProperty('computed_location');
   });
 
   it('should return 400 if session not found', async () => {
@@ -321,9 +328,9 @@ describe('POST /api/sessions/:id/compute', () => {
       body: JSON.stringify({}),
     });
     const res = await POST_COMPUTE(req, { params: { id: invalidSessionId } });
-    expect(res.status).toBe(ErrorDetails[ErrorType.INVALID_INVITE_TOKEN].status);
-    const data = await res.json();
-    expect(data).toHaveProperty('error', ErrorDetails[ErrorType.INVALID_INVITE_TOKEN].message);
+    expect(res.status).toBe(ErrorDetails[ErrorType.INVALID_SESSION].status);
+    const data: ComputeLocationResponse = await res.json();
+    expect(data).toHaveProperty('error', ErrorDetails[ErrorType.INVALID_SESSION].message);
   });
 
   it('should return 400 if location has already been computed', async () => {
@@ -337,7 +344,7 @@ describe('POST /api/sessions/:id/compute', () => {
     });
     const res = await POST_COMPUTE(req, { params: { id: sessionId } });
     expect(res.status).toBe(ErrorDetails[ErrorType.BAD_REQUEST].status);
-    const data = await res.json();
+    const data: ComputeLocationResponse = await res.json();
     expect(data).toHaveProperty('error', ErrorDetails[ErrorType.BAD_REQUEST].message);
   });
 });
@@ -377,7 +384,7 @@ describe('GET /api/sessions/:id', () => {
     });
     const res = await GET_SESSION(req, { params: Promise.resolve({ id: sessionId }) });
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data: GetSessionResponse = await res.json();
     expect(data).toHaveProperty('session');
   });
 });
@@ -410,7 +417,7 @@ describe('GET /api/auth', () => {
     });
     const res = await GET_AUTH(req);
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data: AuthResponse = await res.json();
     expect(data).toHaveProperty('user');
   });
 });
@@ -455,7 +462,7 @@ describe('PATCH /api/sessions/:id/location', () => {
     });
     const res = await PATCH_LOCATION(req, { params: Promise.resolve({ id: sessionId }) });
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data: UpdateLocationResponse = await res.json();
     expect(data).toHaveProperty('session');
     expect(data.session).toHaveProperty('override_location');
     expect(data.session.override_location).toEqual(expect.objectContaining({ lat, lng }));
@@ -474,7 +481,7 @@ describe('PATCH /api/sessions/:id/location', () => {
     });
     const res = await PATCH_LOCATION(req, { params: Promise.resolve({ id: sessionId }) });
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data: UpdateLocationResponse = await res.json();
     expect(data).toHaveProperty('session');
     expect(data.session).toHaveProperty('override_location');
     expect(data.session.override_location).not.toEqual(expect.objectContaining({ lat, lng }));
@@ -519,7 +526,7 @@ describe('PATCH /api/sessions/:id/end', () => {
     });
     const res = await PATCH_END_SESSION(req, { params: Promise.resolve({ id: sessionId }) });
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data: EndSessionResponse = await res.json();
     expect(data).toHaveProperty('session');
     expect(data.session).toHaveProperty('status', 'ended');
   });

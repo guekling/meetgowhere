@@ -31,8 +31,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   try {
     if (!(await isSessionActive(sessionId))) {
-      console.error('Invalid invite token');
-      const { message, status } = ErrorDetails[ErrorType.INVALID_INVITE_TOKEN];
+      console.error('Invalid session');
+      const { message, status } = ErrorDetails[ErrorType.INVALID_SESSION];
       return NextResponse.json({ error: message }, { status });
     }
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const computedLocation = await computeLocation(sessionId, locations);
 
-    return NextResponse.json({ computedLocation: computedLocation }, { status: 200 });
+    return NextResponse.json({ computed_location: computedLocation }, { status: 200 });
   } catch (error) {
     console.error('Error computing session:', error);
 
