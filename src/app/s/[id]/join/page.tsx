@@ -1,5 +1,6 @@
 'use client';
 
+import SessionInvalidPage from '@/app/components/SessionInvalidPage';
 import { getGeoLocation } from '@/app/utils';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -108,8 +109,7 @@ export default function JoinSession() {
   }, [showSessionInfoPage, sessionId, router]);
 
   if (!isSessionValid) {
-    // TODO
-    return <div>Invalid session</div>;
+    return <SessionInvalidPage />
   }
 
   return (

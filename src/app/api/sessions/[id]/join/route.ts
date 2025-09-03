@@ -41,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: message }, { status });
     }
 
-    const user = await getUserFromRequest(request);
+    const user = await getUserFromRequest();
 
     let newToken = user?.token;
     if (!user?.userId) {
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 1 * 24 * 60 * 60, // 1 day
+      maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/',
     });
     return res;

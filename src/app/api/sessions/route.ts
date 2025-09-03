@@ -23,14 +23,12 @@ export async function POST(request: Request) {
     const { userId, token } = await createUser(username, UserRoles.INITIATOR, sessionId, location);
     const session = await createSession(sessionId, userId);
 
-    // @TODO crypto the invite token?
-
     const res = NextResponse.json({ sessionId, inviteToken: session.getDataValue('invite_token') });
     res.cookies.set('userToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 1 * 24 * 60 * 60, // 1 day
+      maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/',
     });
     return res;

@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import SessionCreatedPage from './components/SessionCreatedPage';
 import { getGeoLocation } from './utils';
 import { useRouter } from 'next/navigation';
+import LoadingPage from './components/LoadingPage';
 
 export default function Home() {
   const router = useRouter();
 
+  const [pageLoading, setPageLoading] = useState(false);
+
   const [username, setUsername] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [createSessionLoading, setCreateSessionLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [inviteUrl, setInviteUrl] = useState('');
@@ -25,7 +28,7 @@ export default function Home() {
     }
 
     // create session api
-    setLoading(true);
+    setCreateSessionLoading(true);
     try {
       const location = await getGeoLocation();
 
@@ -47,34 +50,38 @@ export default function Home() {
     } catch (err) {
       setError('Failed to create session');
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkUserAuth = async () => {
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        setIsUserAuthenticated(true);
-        setSessionId(data.user.sessionId);
-      }
-    } catch (err) {
-      setIsUserAuthenticated(false);
+      setCreateSessionLoading(false);
     }
   };
 
   useEffect(() => {
+    setPageLoading(true);
+    const checkUserAuth = async () => {
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          setIsUserAuthenticated(true);
+          setSessionId(data.user.sessionId);
+        }
+      } catch (err) {
+        setIsUserAuthenticated(false);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
     checkUserAuth();
   }, []);
 
   // if user is already authenticated, redirect to session info page
   useEffect(() => {
     if (isUserAuthenticated && sessionId) {
+      setPageLoading(true);
       router.push(`/s/${sessionId}`);
     }
   }, [isUserAuthenticated, sessionId, router]);
@@ -82,6 +89,10 @@ export default function Home() {
   // if user has successfully created a session, show invite link
   if (showInvite) {
     return <SessionCreatedPage name={username} inviteUrl={inviteUrl} />;
+  }
+
+  if (pageLoading) {
+    return <LoadingPage />;
   }
 
   return (
@@ -99,7 +110,7 @@ export default function Home() {
           onClick={handleCreateSession}
           className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition mb-2"
         >
-          {loading ? 'Creating...' : 'Create'}
+          {createSessionLoading ? 'Creating...' : 'Create'}
         </button>
         {error && <div className="w-full text-center text-red-600 mt-2">{error}</div>}
       </div>
