@@ -1,5 +1,7 @@
 # meetgowhere
 
+Not sure where to meet? Let our app find a central meeting location for all of you!
+
 ## Introduction
 
 ### Stack
@@ -43,6 +45,37 @@
 
 ## Project Structure
 
+```
+meetgowhere/
+├── .env.*
+├── README.md
+├── docker-compose.yml
+├── package.json
+├── public/
+├── scripts/
+├── src/
+│   └── app/
+│       ├── api/
+│       │   ├── __tests__/
+│       │   ├── auth/
+│       │   └── sessions/
+│       ├── components/
+│       ├── globals.css
+│       ├── layout.tsx
+│       ├── page.tsx
+│       ├── s/
+│       │   └── [id]/
+│       ├── server/
+│       │   ├── db/
+│       │   ├── services/
+│       │   └── utils/
+│       ├── types/
+│       │   ├── index.ts
+│       │   └── responses.ts
+│       └── utils.ts
+├── tsconfig.json
+```
+
 ## Local Project Setup
 
 ### Pre-Requisites
@@ -68,6 +101,25 @@ brew_install "qemu"  # Ensures Colima can run x86 containers on Apple Silicon
 npm install
 npx sequelize-cli db:migrate # Run the migration files
 ```
+
+#### 4. Add `.env.local` File
+
+The following environment variables should be populated:
+```
+DATABASE_URL=postgres://admin:admin@localhost:5432/meetapp
+
+DB_NAME=meetapp
+DB_USER=admin
+DB_PASSWORD=admin
+DB_HOST=db
+DB_DIALECT=postgres
+DB_PORT=5432
+
+JWT_SECRET=${JWT_SECRET}
+```
+
+* Database information can also be retrieved from the [docker-compose.yml](./docker-compose.yml) file.
+* Randomly generate a secret and update the `JWT_SECRET` variable.
 
 ### Running the Application
 
@@ -107,6 +159,24 @@ npx sequelize-cli db:migrate:undo
 Configurations for the Sequelize CLI are stored in [.sequelizerc](./.sequelizerc).
 
 ## Requirements
+
+1. A user can initiate a session and invite others to join it.
+
+2. When users join a session on invitation, the application obtains their location.
+
+3. Once all users have joined the session and the application has obtained all their locations, the application can calculate a location that, in some reasonable sense, minimizes the distance from all of them and shows it to all users in the session.
+
+    a. You may ignore the feasibility of meeting up at the calculated location.
+
+    b. You may also assume for now that all users are located in Singapore.
+
+4. The user who initiated the session, and only this initiating user, is able change the meeting location. The updated location is then shown to all users.
+
+5. The user who initiated the session may end the session at any time.
+
+    a. Once the session is ended, all users are notified that the session has ended. If a meeting location was calculated, it should be displayed prominently to all users. If not, it should be indicated that the session was cancelled.
+
+    b. A user should **not** be able to join a session that has already ended.
 
 ### Assumptions
 
