@@ -185,6 +185,7 @@ Configurations for the Sequelize CLI are stored in [.sequelizerc](./.sequelizerc
   - They are unable to view information about the session they have joined from another browser on the same device; and
   - They are unable to join more than 1 session at a time.
 - Computing of the meeting location can only be done ONCE.
+  - If more participants join the session after the meeting location has been computed, the initiator is unable to re-compute.
 - An initiator can only manually change the meeting location AFTER computing the location.
   - This can only be done ONCE.
   - After overriding the computed location, the meeting location can no longer be changed. This means that:
